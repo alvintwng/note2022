@@ -1,5 +1,63 @@
 Project: fxOracle
 
+example of grid
+``` java
+        var grid08 = new Label("col 0, row 8, colSpan 8, rowSpan 1");
+        grid.add(grid08, 0, 8, 8, 1);
+        var grid82 = new Label("*82");
+        grid.add(grid82, 8, 2);
+```
+
+### grid.add(grid, 0, 0, 0, 0);
+```
+javafx.scene.layout.GridPane
+
+public void add(Node node,
+                int i,
+                int i1,
+                int i2,
+                int i3)
+
+Adds a child to the gridpane at the specified [column, row] position and spans. This
+convenience method will set the gridpane column, row, and span constraints on the child.
+
+Parameters:
+    child - the node being added to the gridpane
+    columnIndex - the column index position for the child within the gridpane, counting from 0
+    rowIndex - the row index position for the child within the gridpane, counting from 0
+    colspan - the number of columns the child's layout area should span
+    rowspan - the number of rows the child's layout area should span
+```
+### grid.add(grid, 0, 0, 0);
+```
+javafx.scene.layout.GridPane
+
+public void add(Node node,
+                int i,
+                int i1)
+
+Adds a child to the gridpane at the specified [column, row] position. This
+convenience method will set the gridpane column and row constraints on the child.
+
+Parameters:
+    child - the node being added to the gridpane
+    columnIndex - the column index position for the child within the gridpane, counting from 0
+    rowIndex - the row index position for the child within the gridpane, counting from 0
+```
+
+### text.setText("")
+```
+javafx.scene.text.Text
+
+public final void setText(String string)
+
+Sets the value of the property text.
+Property description:
+    Defines text string that is to be displayed.
+Default value:
+    empty string
+```
+
 App.java
 ``` java
 package com.zero1.fxoracle;
@@ -36,10 +94,10 @@ public class App extends Application {
 
         // GridPane with Gap and Padding Properties
         var grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
+        grid.setAlignment(Pos.CENTER); // either .setPadding
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setPadding(new Insets(25, 25, 25, 25));
+        grid.setPadding(new Insets(25, 25, 25, 25)); // either .setAlignment
 
         // Add Text, Labels, and Text Fields. Controls
         /* The grid.add() method adds the scenetitle variable to the layout grid. 
