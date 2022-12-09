@@ -1,3 +1,5 @@
+/* www.Zero1.Sg 2022Dec */
+package com.zero1.app;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,33 +20,61 @@ public class Main {
 
     private static final String DELIMITER = "\\";
     private final HashMap<String, ArrayList<String>> hashmap;
+    private ArrayList<String> matchedArr;
+    public int primaryLineCount = 0;
+    public int targetFileChkCount = 0;
 
     public Main() {
         hashmap = new HashMap<>();
+        matchedArr = new ArrayList<>();
     }
 
     /**
-     * To get text lines from file, extract subString folder name and file name.
-     * Sample format {@code CB718C312BA1B3622ECFDCBF727465F2\filename.png}.
+     * Initiate application.
      *
+     * @param primaryPath
+     * @param targetPath
+     */
+    public Main(String primaryPath, String targetPath) {
+        hashmap = new HashMap<>();
+        matchedArr = new ArrayList<>();
+        putFilenameToHashmap(primaryPath);
+        targetFilesVerifyByHash(targetPath);
+    }
+
+    public HashMap<String, ArrayList<String>> getHashmap() {
+        return hashmap;
+    }
+
+    public ArrayList<String> getMatchedArr() {
+        return matchedArr;
+    }
+
+    /**
+     * To get text lines from file, extract subString folder name and file name.Sample format {@code CB718C312BA1B3622ECFDCBF727465F2\filename.png}.
      * Put key of 32 chars string, and filename as value to {@code hashmap}.
      *
      * @param primaryPath File of list of paths
+     * @return 
      */
-    public void putFilenameToHashmap(String primaryPath) {
+    public boolean addPrimaryPath(String primaryPath) {
+        return putFilenameToHashmap(primaryPath);
+    }
+
+    private boolean putFilenameToHashmap(String primaryPath) {
         String textLine;
-        int priCount = 0;
         Scanner fileIn;
-        System.out.println("");
-        System.out.println("\nSubString key and name, to hashmap.");
-        System.err.println("\n> primaryPath: " + primaryPath);
+
         var dirfile = new File(primaryPath + DELIMITER);
         if (dirfile.isDirectory()) {
             for (var str2 : dirfile.list()) {
-                System.out.println("> " + str2);
                 var filePath = (primaryPath + DELIMITER + str2);
 
                 try {
+                    if ((new File(primaryPath + DELIMITER + str2)).isDirectory()) {
+                        continue;
+                    }
+
                     fileIn = new Scanner(
                             new FileInputStream(filePath));
 
@@ -59,22 +89,21 @@ public class Main {
                         if (!subStringPutToHash(textLine)) {
                             System.err.println(" < " + str2);
                         }
-                        priCount++;
+                        primaryLineCount++;
                         hasNextline = fileIn.hasNextLine();
                     }
                     fileIn.close();
 
                 } catch (FileNotFoundException e) {
                     System.out.println("File not found.");
-                    System.exit(0);
+                    return false;
                 }
             }
+            return true;
         } else {
             System.out.println("Primary directory NOT correct!");
-            System.exit(0);
+            return false;
         }
-        System.out.println("> row count: " + priCount);
-        System.out.println("> Hashmap size: " + hashmap.size());
     }
 
     private boolean subStringPutToHash(String s) {
@@ -118,21 +147,22 @@ public class Main {
     }
 
     /**
-     * To get the full path name of directory individual files. And compare with
-     * {@code hashmap} for key as folder, value as filename.
+     * Add additional path. To get the full path name of directory individual
+     * files. And compare with {@code hashmap} for key as folder, value as
+     * filename.
      *
-     * @param targetPath Path from local drive, or local OneDrive.
+     * @param targetPath Path from local drive, or local sharepoint.
      * @return True for process done, or false for wrong directory
      */
-    public boolean targetFilesVerifyByHash(String targetPath) {
-        System.err.println("\n>> targetPath: " + targetPath);
+    public boolean addTargetPath(String targetPath) {
+        return targetFilesVerifyByHash(targetPath);
+    }
+
+    private boolean targetFilesVerifyByHash(String targetPath) {
+
         var mainfile = new File(targetPath);
 
         if (mainfile.isDirectory()) {
-            int monitor = 0;
-            var dirLgth = mainfile.list().length;
-            System.out.println("\nScanning thru " + dirLgth + " directories:");
-
             for (var str : mainfile.list()) {
                 var dirfile = new File(mainfile + DELIMITER + str);
                 if (dirfile.isDirectory()) {
@@ -148,19 +178,19 @@ public class Main {
                             ArrayList<String> arr = hashmap.get(tagKey);
                             for (String priFileName : arr) {
                                 if (priFileName.equalsIgnoreCase(tagFilename)) {
-                                    System.err.println(">> matched: " + targetPath + DELIMITER + str
-                                            + DELIMITER + tagFilename);
+                                    matchedArr.add((targetPath + DELIMITER + str + DELIMITER + tagFilename));
                                 }
                             }
                         }
+                        targetFileChkCount++;
                     }
                 } else {
                     System.out.println(">> " + dirfile.getName());
                 }
 
-                // monitoring, done at 50 'dots'
+                /* // monitoring, done at 50 'dots' KIV
                 monitor = (monitor <= 0) ? dirLgth / 50 : monitor - 1;
-                System.out.print((monitor <= 0) ? "." : "");
+                System.out.print((monitor <= 0) ? "." : ""); */
             }
             return true;
         } else {
@@ -175,14 +205,7 @@ public class Main {
         return hashmap.toString();
     }
 
-    /**
-     * Test run
-     *
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
-        var m = new Main();
-
         PrintStream errStream = null;
         var logfile = "logmessages.txt";
         try {
@@ -194,71 +217,78 @@ public class Main {
         }
 //        System.setErr(errStream);
 
-        m.putFilenameToHashmap("D:\\temp2");
-        m.targetFilesVerifyByHash("C:\\Users\\AlvinNg\\verify\\test\\test1");
+        System.out.println("SubString key and name, to hashmap.");
 
-//        m.putFilenameToHashmap("D:\\temp");
-//        m.targetFilesVerifyByHash("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201808");
+//        String primaryPath = ("D:\\temp");
+//        String targetPath = ("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201808");
+//        var m = new Main(primaryPath, targetPath);
+//        System.err.println("> primaryPath: " + primaryPath);
 //        m.targetFilesVerifyByHash("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201809");
-        
-        System.out.println("\nCompleted, check " + logfile + " for error msg.");
+//        System.err.println("> primaryPath: " + primaryPath);
+        String primaryPath = "D:\\temp2";
+        String targetPath = "C:\\testdata\\test1";
+        var m = new Main(primaryPath, targetPath);
+        System.err.println("> primaryPath: " + primaryPath);
+
+        System.out.println("> row count: " + m.primaryLineCount);
+        System.out.println("> Hashmap size: " + m.getHashmap().size());
+
+        System.err.println(">> targetPath: " + targetPath);
+        System.out.println(">> files count: " + m.targetFileChkCount);
+
+        System.err.println(">> matched found: " + m.getMatchedArr().size());
+        for (String s : m.getMatchedArr()) {
+            System.err.println(s);
+        }
+
+        System.out.println("Completed. Check " + logfile + " for "
+                + m.getMatchedArr().size() + " matched data.");
         errStream.close();
     }
 }
 
+/* MainTest.java
+package com.zero1.app;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MainTest {
+
+    String primaryPath = "..\\..\\verify\\app\\testSample";
+    String targetPath = "..\\..\\verify\\app\\testSample";
+
+    public MainTest() {
+    }
+
+    @Test
+    public void testMainHashSize() {
+        var m = new Main(primaryPath, targetPath);
+        assertEquals(5, m.getHashmap().size());
+    }
+
+    @Test
+    public void testMainMatchedQty() {
+        var m = new Main(primaryPath, targetPath);
+        assertEquals(1, m.getMatchedArr().size());
+    }
+}
+*/
+
 /*
-run:
-
-
+--- exec-maven-plugin:3.0.0:exec (default-cli) @ app ---
 SubString key and name, to hashmap.
-> md5chksum.txt
 > row count: 9
 > Hashmap size: 5
-
-Will scan thru 3 directories:
-...
-Completed, check logmessages.txt for error msg.
-BUILD SUCCESSFUL (total time: 0 seconds)
+>> files count: 2
+Completed. Check logmessages.txt for 2 matched data.
  */
-
- /* eg "C:\\Users\\AlvinNg\\verify\\test\\test1\\CB718C312BA1B3622ECFDCBF727465F2\\Duke.png"; */
-
- /* logmessages.txt
-> primaryPath: D:\temp2
+/* logmessages.txt
 > key lgth err: c:\\users\alvinng\verify\test\test1\z01r002\zero1.png < md5chksum.txt
 > StringException: photoid_20181118.zip md5 c8139bf1e2aff9f95c5a238a2a0656c6 < md5chksum.txt
-
->> targetPath: C:\Users\AlvinNg\verify\test\test1
->> matched: C:\Users\AlvinNg\verify\test\test1\CB718C312BA1B3622ECFDCBF727465F2\Duke.png
->> matched: C:\Users\AlvinNg\verify\test\test1\CB718C312BA1B3622ECFDCBF727465F2\Z01R002.png
- */
-
- /* md5chksum.txt
-C:\Users\AlvinNg\verify\test\test1\CB718C312BA1B3622ECFDCBF727465F2\Z01R002.png
-C:\Users\AlvinNg\Zero1 Pte Ltd\Portal - ToBeDeleted\201809\fe5e99114138db8a57c888ec270631b6\20180512_214629.jpg
-C:\Users\AlvinNg\verify\test\test1\Z01R002\zero1.png
-C:\Users\AlvinNg\Zero1 Pte Ltd\Portal - ToBeDeleted\201808\0a7efcee6ef0761a2e8dea1c17684074\1535777048812682408596.jpg
-photoid_20181118.zip md5 c8139bf1e2aff9f95c5a238a2a0656c6
-C:\Users\AlvinNg\Zero1 Pte Ltd\Portal - ToBeDeleted\201809\1ce8f8bf682135c2e44b0414cb8572e2\1536034574342-565107118.jpg
-C:\Users\AlvinNg\Zero1 Pte Ltd\Portal - ToBeDeleted\201808\d3c8965cadd2b12123d469480709ba53\image.jpg
-C:\Users\AlvinNg\verify\test\test1\cb718c312ba1b3622ecfdcbf727465f2\Duke.png
-C:\Users\AlvinNg\Zero1 Pte Ltd\Portal - ToBeDeleted\201809\fe5e99114138db8a57c888ec270631b6\20180512_214614.jpg
- */
-
- /* tree path for target dir C:\Users\AlvinNg\verify\test\test1
-C:\Users\AlvinNg\verify\test\test1>tree /f
-Folder PATH listing for volume Windows-SSD
-Volume serial number is 6E2A-67EF
-C:.
-├───C5094E4C507910CFBE9974D1C97CE73D
-│       zero1.png
-│
-├───CB718C312BA1B3622ECFDCBF727465F2
-│       Duke.png
-│       Z01R002.png
-│       zero1QR.png
-│
-└───fe5e99114138db8a57c888ec270631b6
-
-C:\Users\AlvinNg\verify\test\test1>
- */
+> primaryPath: D:\temp2
+>> targetPath: C:\testdata\test1
+>> matched found: 2
+C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\Duke.png
+C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\Z01R002.png
+*/
