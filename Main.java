@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -20,14 +20,11 @@ public class Main {
 
     private static final String DELIMITER = "\\";
     private final HashMap<String, ArrayList<String>> hashmap;
-    private ArrayList<String> matchedArr;
-    public int primaryLineCount = 0;
-    public int targetFileChkCount = 0;
-
-    public Main() {
-        hashmap = new HashMap<>();
-        matchedArr = new ArrayList<>();
-    }
+    private final ArrayList<String> matchedArr;
+    private final ArrayList<String> errPrint;
+    private int primaryLineCount = 0;
+    private int targetFileChkCount = 0;
+    private int mode = 0;
 
     /**
      * Initiate application.
@@ -38,8 +35,30 @@ public class Main {
     public Main(String primaryPath, String targetPath) {
         hashmap = new HashMap<>();
         matchedArr = new ArrayList<>();
-        putFilenameToHashmap(primaryPath);
-        targetFilesVerifyByHash(targetPath);
+        errPrint = new ArrayList<>();
+        addPrimaryPath(primaryPath);
+        addTargetPath(targetPath);
+    }
+
+    /**
+     * Initiate application with mode = 1, i.e. filename as hash key.
+     *
+     * @param primaryPath
+     * @param targetPath
+     * @param hashkeyType mode = 1: hash key will be filename, hash value for
+     * folder name
+     */
+    public Main(String primaryPath, String targetPath, int hashkeyType) {
+        mode = hashkeyType;
+        hashmap = new HashMap<>();
+        matchedArr = new ArrayList<>();
+        errPrint = new ArrayList<>();
+        addPrimaryPath(primaryPath);
+        addTargetPath(targetPath);
+    }
+
+    public int getMode() {
+        return mode;
     }
 
     public HashMap<String, ArrayList<String>> getHashmap() {
@@ -50,14 +69,33 @@ public class Main {
         return matchedArr;
     }
 
+    public ArrayList<String> getErrPrint() {
+        return errPrint;
+    }
+
+    public void setErrPrint(String s) {
+        System.out.println(s);
+        errPrint.add(s);
+    }
+
+    public int getPrimaryLineCount() {
+        return primaryLineCount;
+    }
+
+    public int getTargetFileChkCount() {
+        return targetFileChkCount;
+    }
+
     /**
-     * To get text lines from file, extract subString folder name and file name.Sample format {@code CB718C312BA1B3622ECFDCBF727465F2\filename.png}.
+     * To get text lines from file, extract subString folder name and file
+     * name.Sample format {@code CB718C312BA1B3622ECFDCBF727465F2\filename.png}.
      * Put key of 32 chars string, and filename as value to {@code hashmap}.
      *
      * @param primaryPath File of list of paths
-     * @return 
+     * @return
      */
     public boolean addPrimaryPath(String primaryPath) {
+        setErrPrint("> primaryPath: " + primaryPath);
         return putFilenameToHashmap(primaryPath);
     }
 
@@ -87,7 +125,7 @@ public class Main {
                         }
 
                         if (!subStringPutToHash(textLine)) {
-                            System.err.println(" < " + str2);
+                            errPrint.add(" < " + str2);
                         }
                         primaryLineCount++;
                         hasNextline = fileIn.hasNextLine();
@@ -95,13 +133,13 @@ public class Main {
                     fileIn.close();
 
                 } catch (FileNotFoundException e) {
-                    System.out.println("File not found.");
+                    setErrPrint("> Error at FileNotFoundException " + e);
                     return false;
                 }
             }
             return true;
         } else {
-            System.out.println("Primary directory NOT correct!");
+            errPrint.add("Primary directory NOT correct!");
             return false;
         }
     }
@@ -113,7 +151,7 @@ public class Main {
             mkey = sub.substring(sub.lastIndexOf(DELIMITER) + 1); //eg. CB718C312BA1B3622ECFDCBF727465F2
             filename = s.substring(s.lastIndexOf(DELIMITER) + 1);
         } catch (StringIndexOutOfBoundsException e) {
-            System.err.print("> StringException: " + s);
+            errPrint.add("> StringException: " + s);
             return false;
         }
 
@@ -131,17 +169,25 @@ public class Main {
         }
 
         if (keylgth == 32) {
-
             // if hashmap NOT contain key
-            if (!hashmap.containsKey(mkey)) {
-                hashmap.put(mkey, new ArrayList<>());
+            if (mode != 1) {
+                // folder(mKey) as hash key
+                if (!hashmap.containsKey(mkey)) {
+                    hashmap.put(mkey, new ArrayList<>());
+                }
+                hashmap.get(mkey).add(filename.toLowerCase());
+            } else {
+                //  System.out.println("> filename as hashkey");
+                if (!hashmap.containsKey(filename)) {
+                    hashmap.put(filename, new ArrayList<>());
+                }
+                hashmap.get(filename).add(mkey.toLowerCase());
             }
-            hashmap.get(mkey).add(filename.toLowerCase());
 
             /* * System.out.println(">> Primary >> mkey: " + mkey + " | filename: " + filename); // */
             return true;
         } else {
-            System.err.print("> key lgth err: " + s);
+            errPrint.add("> key lgth err: " + s);
             return false;
         }
     }
@@ -155,6 +201,7 @@ public class Main {
      * @return True for process done, or false for wrong directory
      */
     public boolean addTargetPath(String targetPath) {
+        setErrPrint(">> targetPath: " + targetPath);
         return targetFilesVerifyByHash(targetPath);
     }
 
@@ -169,23 +216,36 @@ public class Main {
                     var tagKey = dirfile.getName().toLowerCase();
                     for (var str2 : dirfile.list()) {
                         var subfile = new File(dirfile + DELIMITER + str2);
-                        var tagFilename = subfile.getName();
+                        var tagFilename = subfile.getName().toLowerCase();
                         /* * System.out.println(">> target key: " + tagKey + " | name: " + tagFilename); // */
 
                         // if there IS match from hashmap, will log error message.
-                        if (hashmap.containsKey(tagKey)) {
-
-                            ArrayList<String> arr = hashmap.get(tagKey);
-                            for (String priFileName : arr) {
-                                if (priFileName.equalsIgnoreCase(tagFilename)) {
-                                    matchedArr.add((targetPath + DELIMITER + str + DELIMITER + tagFilename));
-                                }
+                        if (mode != 1) {
+                            // folder(mKey) as hash key,
+                            if (hashmap.containsKey(tagKey)) {
+                                ArrayList<String> arr = hashmap.get(tagKey);
+                                arr.forEach(priFileName -> {
+                                    if (priFileName.equalsIgnoreCase(tagFilename)) {
+                                        matchedArr.add((targetPath + DELIMITER + str + DELIMITER + tagFilename));
+                                    }
+                                });
+                            }
+                        } else {
+                            // System.out.println(">>  filename as hashkey");
+                            if (hashmap.containsKey(tagFilename)) {
+                                ArrayList<String> arr = hashmap.get(tagFilename);
+                                arr.forEach(priFileName -> {
+                                    if (priFileName.equalsIgnoreCase(tagKey)) {
+                                        matchedArr.add((targetPath + DELIMITER + str + DELIMITER + tagFilename));
+                                    }
+                                });
                             }
                         }
+
                         targetFileChkCount++;
                     }
                 } else {
-                    System.out.println(">> " + dirfile.getName());
+                    errPrint.add(">> " + dirfile.getName());
                 }
 
                 /* // monitoring, done at 50 'dots' KIV
@@ -194,57 +254,36 @@ public class Main {
             }
             return true;
         } else {
-            System.err.println("Target directory NOT correct!");
+            setErrPrint("Target directory NOT correct!");
             return false;
         }
     }
 
+    public void printErrlogNMatchedToFile(String filename) {
+        PrintWriter outputStream = null;
+        try {
+            outputStream = new PrintWriter(
+                    new FileOutputStream(filename));
+        } catch (FileNotFoundException e) {
+            setErrPrint("Error opening the file " + filename);
+            System.exit(0);
+        }
+
+        for (String e : getErrPrint()) {
+            outputStream.println(e);
+        }
+
+        for (String s : getMatchedArr()) {
+            outputStream.println(s);
+        }
+        outputStream.close();
+    }
+
     @Override
     public String toString() {
-
         return hashmap.toString();
     }
 
-    public static void main(String args[]) {
-        PrintStream errStream = null;
-        var logfile = "logmessages.txt";
-        try {
-            errStream = new PrintStream(
-                    new FileOutputStream(logfile));
-        } catch (FileNotFoundException e) {
-            System.out.println("Error opening file with FileOutputStream.");
-            System.exit(0);
-        }
-//        System.setErr(errStream);
-
-        System.out.println("SubString key and name, to hashmap.");
-
-//        String primaryPath = ("D:\\temp");
-//        String targetPath = ("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201808");
-//        var m = new Main(primaryPath, targetPath);
-//        System.err.println("> primaryPath: " + primaryPath);
-//        m.targetFilesVerifyByHash("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201809");
-//        System.err.println("> primaryPath: " + primaryPath);
-        String primaryPath = "D:\\temp2";
-        String targetPath = "C:\\testdata\\test1";
-        var m = new Main(primaryPath, targetPath);
-        System.err.println("> primaryPath: " + primaryPath);
-
-        System.out.println("> row count: " + m.primaryLineCount);
-        System.out.println("> Hashmap size: " + m.getHashmap().size());
-
-        System.err.println(">> targetPath: " + targetPath);
-        System.out.println(">> files count: " + m.targetFileChkCount);
-
-        System.err.println(">> matched found: " + m.getMatchedArr().size());
-        for (String s : m.getMatchedArr()) {
-            System.err.println(s);
-        }
-
-        System.out.println("Completed. Check " + logfile + " for "
-                + m.getMatchedArr().size() + " matched data.");
-        errStream.close();
-    }
 }
 
 /* MainTest.java
@@ -257,38 +296,60 @@ public class MainTest {
 
     String primaryPath = "..\\..\\verify\\app\\testSample";
     String targetPath = "..\\..\\verify\\app\\testSample";
+    Main m = new Main(primaryPath, targetPath);
 
     public MainTest() {
     }
 
     @Test
     public void testMainHashSize() {
-        var m = new Main(primaryPath, targetPath);
+        m = new Main(primaryPath, targetPath);
         assertEquals(5, m.getHashmap().size());
     }
 
     @Test
+    public void testMainHashSizeMode1() {
+        m = new Main(primaryPath, targetPath, 1);
+        assertEquals(1, m.getMode());
+        assertEquals(7, m.getHashmap().size());
+    }
+
+    @Test
     public void testMainMatchedQty() {
-        var m = new Main(primaryPath, targetPath);
         assertEquals(1, m.getMatchedArr().size());
     }
-}
-*/
 
-/*
+    @Test
+    public void testCount() {
+        assertEquals(9, m.getPrimaryLineCount());
+        assertEquals(3, m.getTargetFileChkCount());
+    }
+
+    @Test
+    public void testErrPrint() {
+        m.setErrPrint("test");
+        assertEquals(8, m.getErrPrint().size());
+    }
+}
+ */
+
+ /*
 --- exec-maven-plugin:3.0.0:exec (default-cli) @ app ---
 SubString key and name, to hashmap.
-> row count: 9
-> Hashmap size: 5
->> files count: 2
-Completed. Check logmessages.txt for 2 matched data.
- */
-/* logmessages.txt
-> key lgth err: c:\\users\alvinng\verify\test\test1\z01r002\zero1.png < md5chksum.txt
-> StringException: photoid_20181118.zip md5 c8139bf1e2aff9f95c5a238a2a0656c6 < md5chksum.txt
 > primaryPath: D:\temp2
 >> targetPath: C:\testdata\test1
+> row count: 9
+> Hashmap size: 5
+>> files count: 4
 >> matched found: 2
-C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\Duke.png
-C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\Z01R002.png
-*/
+> primaryPath: D:\temp2
+> key lgth err: c:\\users\alvinng\verify\test\test1\z01r002\zero1.png
+ < md5chksum.txt
+> StringException: photoid_20181118.zip md5 c8139bf1e2aff9f95c5a238a2a0656c6
+ < md5chksum.txt
+>> targetPath: C:\testdata\test1
+>> matched found: 2
+C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\duke.png
+C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\z01r002.png
+Completed. Check logmessages.txt for 2 matched data.
+ */
