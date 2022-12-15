@@ -20,12 +20,8 @@ public class Main {
 
     private static final String DELIMITER = "\\";
     private final HashMap<String, ArrayList<String>> hashmap;
-    private final ArrayList<String> matchedArr;
-    private final ArrayList<String> errPrint;
-    private int primaryLineCount = 0;
-    private int targetFileChkCount = 0;
-    private int mode = 0;
-    private ArrayList<String> matchedFilesOnly;
+    private ArrayList<String> matchedArr, errPrint, matchedFilesOnly;
+    private int primaryLineCount = 0, targetFileChkCount = 0, mode = 0;
     public int matchedNameCount = 0;
     public String info = "";
 
@@ -39,8 +35,8 @@ public class Main {
         hashmap = new HashMap<>();
         matchedArr = new ArrayList<>();
         errPrint = new ArrayList<>();
-        addPrimaryPath(primaryPath);
-        addTargetPath(targetPath);
+        addPrimarypathFilenameToHashmap(primaryPath);
+        targetFilesVerifyByHash(targetPath);
     }
 
     /**
@@ -58,8 +54,8 @@ public class Main {
         matchedArr = new ArrayList<>();
         errPrint = new ArrayList<>();
         matchedFilesOnly = new ArrayList<>();
-        addPrimaryPath(primaryPath);
-        addTargetPath(targetPath);
+        addPrimarypathFilenameToHashmap(primaryPath);
+        targetFilesVerifyByHash(targetPath);
     }
 
     public int getMode() {
@@ -142,12 +138,9 @@ public class Main {
      * @param primaryPath File of list of paths
      * @return
      */
-    public boolean addPrimaryPath(String primaryPath) {
-        info += "\n" + "> primaryPath: " + primaryPath;
-        return putFilenameToHashmap(primaryPath);
-    }
-
-    private boolean putFilenameToHashmap(String primaryPath) {
+    public boolean addPrimarypathFilenameToHashmap(String primaryPath) {
+        info += """
+                > primaryPath: """ + primaryPath;
         String textLine;
         Scanner fileIn;
 
@@ -193,6 +186,15 @@ public class Main {
     }
 
     private boolean subStringPutToHash(String s) {
+
+        // remove the access char 0
+        s = s.replace("\u0000", "");
+//        var ss = "";
+//        for (var a : s.toCharArray()) {
+//            ss += (Integer.valueOf(a) != 0) ? (a) : ("");
+//        }
+//        s = ss;
+
         String filename, mkey, sub;
         try {
             sub = s.substring(0, s.lastIndexOf(DELIMITER));
@@ -204,19 +206,7 @@ public class Main {
         }
 
         // check if right key lgth
-        var keylgth = mkey.length();
-
-        //  modified double char to single
-        if (keylgth > 64) {
-            var ss = "";
-            for (var a : mkey.toCharArray()) {
-                ss += (Integer.valueOf(a) != 0) ? (a) : ("");
-            }
-            mkey = ss;
-            keylgth = ss.length();
-        }
-
-        if (keylgth == 32) {
+        if (mkey.length() == 32) {
             switch (mode) {
                 case 2 -> {
                     //  System.out.println("> filename as hashkey");
@@ -230,14 +220,14 @@ public class Main {
                     if (!hashmap.containsKey(filename)) {
                         hashmap.put(filename, new ArrayList<>());
                     }
-                    hashmap.get(filename).add(mkey.toLowerCase());
+                    hashmap.get(filename).add(mkey);
                 }
                 default -> {
                     // folder(mKey) as hash key
                     if (!hashmap.containsKey(mkey)) {
                         hashmap.put(mkey, new ArrayList<>());
                     }
-                    hashmap.get(mkey).add(filename.toLowerCase());
+                    hashmap.get(mkey).add(filename);
                 }
             }
 
@@ -257,13 +247,9 @@ public class Main {
      * @param targetPath Path from local drive, or local sharepoint.
      * @return True for process done, or false for wrong directory
      */
-    public boolean addTargetPath(String targetPath) {
-        info += "\n" + ">> targetPath: " + targetPath;
-        return targetFilesVerifyByHash(targetPath);
-    }
-
-    private boolean targetFilesVerifyByHash(String targetPath) {
-
+    public boolean targetFilesVerifyByHash(String targetPath) {
+        info += """
+                >> targetPath: """ + targetPath;
         var mainfile = new File(targetPath);
 
         if (mainfile.isDirectory()) {
@@ -273,7 +259,7 @@ public class Main {
                     var tagKey = dirfile.getName().toLowerCase();
                     for (var str2 : dirfile.list()) {
                         var subfile = new File(dirfile + DELIMITER + str2);
-                        var tagFilename = subfile.getName().toLowerCase();
+                        var tagFilename = subfile.getName();
                         /* * System.out.println(">> target key: " + tagKey + " | name: " + tagFilename); // */
                         switch (mode) {
                             case 1 -> {
@@ -341,25 +327,19 @@ public class Main {
         }
 
         outputStream.println("\nMatched 'folder file':");
-        for (String s : getMatchedArr()) {
-            outputStream.println(s);
-        }
+        getMatchedArr().forEach(outputStream::println);
 
         if (getMode() == 2) {
             outputStream.println("\nPortal filename   <> against the txt files:\n"
                     + info + "\n"
                     + "only compare filename.length > 20, ie. ignore  image.jpg, ..."
                     + "\n");
-            for (String s : matchedFilesOnly) {
-                outputStream.println(s);
-            }
+            matchedFilesOnly.forEach(outputStream::println);
             outputStream.println(">>> matchedNameCount: " + matchedNameCount);
         } //else 
         {
             outputStream.println("\nError Messages:");
-            for (String e : getErrPrint()) {
-                outputStream.println(e);
-            }
+            getErrPrint().forEach(outputStream::println);
         }
         outputStream.close();
     }
@@ -392,6 +372,13 @@ public class MainTest {
         assertEquals(1, m.getMatchedArr().size());
         assertEquals(9, m.getPrimaryLineCount());
         assertEquals(3, m.getTargetFileChkCount());
+        
+        m.addPrimarypathFilenameToHashmap(primaryPath);
+        m.targetFilesVerifyByHash(targetPath);
+        assertEquals(5, m.getHashmapSize());
+        assertEquals(3, m.getMatchedArr().size());
+        assertEquals(18, m.getPrimaryLineCount());
+        assertEquals(6, m.getTargetFileChkCount());
     }
 
     @Test
@@ -426,26 +413,20 @@ public class MainTest {
  /*
 --- exec-maven-plugin:3.0.0:exec (default-cli) @ app ---
 SubString key and name, to hashmap.
-
-> primaryPath: D:\temp2
->> targetPath: C:\testdata\test1
+> primaryPath:D:\temp2>> targetPath:C:\testdata\test1
 > row count: 9
 > Hashmap size: 5
 >> files count: 4
 >> matched found: 2
-> key lgth err: c:\\users\alvinng\verify\test\test1\z01r002\zero1.png
- < md5chksum.txt
-> StringException: photoid_20181118.zip md5 c8139bf1e2aff9f95c5a238a2a0656c6
- < md5chksum.txt
->> matched found: 2
-
+>> Error size: 5
+Completed. Check logmessages.txt
 Matched 'folder file':
 C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\duke.png
 C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\z01r002.png
 Completed. Check logmessages.txt
  */
 
-/* App.java
+ /* App.java
 public class App {
 
     public static void main(String args[]) {
@@ -456,29 +437,26 @@ public class App {
 
 //        String primaryPath = ("D:\\temp");
 //        String targetPath = ("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201808");
-//        var m = new Main(primaryPath, targetPath, 2);
-//        m.addTargetPath("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201809");
+//        var m = new Main(primaryPath, targetPath);
+//        m.addPrimarypathFilenameToHashmap("C:\\Users\\AlvinNg\\Zero1 Pte Ltd\\Portal - ToBeDeleted\\201809");
 //
         String primaryPath = "D:\\temp2";
         String targetPath = "C:\\testdata\\test1";
         var m = new Main(primaryPath, targetPath);
 
-        System.out.println(m.info);
-        System.out.println("> row count: " + m.getPrimaryLineCount());
-        System.out.println("> Hashmap size: " + m.getHashmapSize());
-        System.out.println(">> files count: " + m.getTargetFileChkCount());
+        System.out.println(m.info + "\n"
+                + "> row count: " + m.getPrimaryLineCount() + "\n"
+                + "> Hashmap size: " + m.getHashmapSize() + "\n"
+                + ">> files count: " + m.getTargetFileChkCount());
 
         if (m.getMode() != 2) {
             m.setErrPrint(">> matched found: " + m.getMatchedArr().size());
         }
 
-        m.getErrPrint().forEach(s -> {
-            System.out.println(s);
-        });
-        System.out.println("\nMatched 'folder file':");
-        m.getMatchedArr().forEach(s -> {
-            System.out.println(s);
-        });
+        System.out.println(">> Error size: " +  m.getErrPrint().size());
+//        m.getErrPrint().forEach(System.out::println);
+//        System.out.println("\nMatched 'folder file':");
+//        m.getMatchedArr().forEach(System.out::println);
 
 //        m.printErrlogNMatchedToFile(logfile); // OR
         if (m.getMode() == 2) {
@@ -486,13 +464,11 @@ public class App {
                                Portal filename   <> against the txt files:
                                only compare filename.length > 20, ie. ignore  image.jpg, ...
                                """);
-            m.getMatchedFilesOnly().forEach(s -> {
-                System.out.println(s);
-            });
+            m.getMatchedFilesOnly().forEach(s -> System.out.println(s));
             System.out.println(">>> matchedNameCount: " + m.matchedNameCount);
         }
 
         System.out.println("Completed. Check " + logfile);
     }
 }
-*/
+ */
