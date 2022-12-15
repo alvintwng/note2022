@@ -1,4 +1,5 @@
-/* www.Zero1.Sg 2022Dec */
+/* www.Zero1.Sg 2022Dec
+https://github.com/alvinzero1/verify/tree/api */
 package com.zero1.app;
 
 import java.io.File;
@@ -58,20 +59,14 @@ public class Main {
         targetFilesVerifyByHash(targetPath);
     }
 
-    public int getMode() {
-        return mode;
-    }
-
     /**
      * <li> mode = 1: filename as hashmap key. to compare folername togather
      * with filename to matchced.
      * <li> mode = 2: filename as hashmap key. However, only to compare
      * filename.
-     *
-     * @param mode
      */
-    public void setMode(int mode) {
-        this.mode = mode;
+    public int getMode() {
+        return mode;
     }
 
     /**
@@ -160,6 +155,9 @@ public class Main {
                     boolean hasNextline = fileIn.hasNextLine();
                     while (hasNextline) {
                         textLine = fileIn.nextLine().trim().toLowerCase();
+
+                        textLine = utf16ToUtf8(textLine);
+
                         if (textLine.length() <= 1) {
                             hasNextline = fileIn.hasNextLine();
                             continue;
@@ -185,15 +183,23 @@ public class Main {
         }
     }
 
-    private boolean subStringPutToHash(String s) {
+    /**
+     * if first or second chars in s contain null \u0000, remove all
+     *
+     * @param s
+     * @return s
+     */
+    public static String utf16ToUtf8(String s) {
+        if ((s.codePointAt(1) == 0) || (s.codePointAt(3) == 0)) {
 
-        // remove the access char 0
-        s = s.replace("\u0000", "");
-//        var ss = "";
-//        for (var a : s.toCharArray()) {
-//            ss += (Integer.valueOf(a) != 0) ? (a) : ("");
-//        }
-//        s = ss;
+            // String s in utf16, converting to utf8
+            // remove the access char 0
+            return s.replace("\u0000", "");
+        }
+        return s;
+    }
+
+    private boolean subStringPutToHash(String s) {
 
         String filename, mkey, sub;
         try {
@@ -367,12 +373,12 @@ public class MainTest {
 
     @Test
     public void testMainHashSize() {
-        Main m = new Main(primaryPath, targetPath);
+        var m = new Main(primaryPath, targetPath);
         assertEquals(5, m.getHashmapSize());
         assertEquals(1, m.getMatchedArr().size());
         assertEquals(9, m.getPrimaryLineCount());
         assertEquals(3, m.getTargetFileChkCount());
-        
+
         m.addPrimarypathFilenameToHashmap(primaryPath);
         m.targetFilesVerifyByHash(targetPath);
         assertEquals(5, m.getHashmapSize());
@@ -383,14 +389,14 @@ public class MainTest {
 
     @Test
     public void testMainHashSizeMode1() {
-        Main m = new Main(primaryPath, targetPath, 1);
+        var m = new Main(primaryPath, targetPath, 1);
         assertEquals(1, m.getMode());
         assertEquals(7, m.getHashmapSize());
     }
 
     @Test
     public void testMode2() {
-        Main m = new Main(primaryPath, targetPath, 2);
+        var m = new Main(primaryPath, targetPath, 2);
         assertEquals(2, m.getMode());
         assertEquals(7, m.getHashmapSize());
         assertEquals(0, m.getMatchedFilesOnly().size());
@@ -399,13 +405,19 @@ public class MainTest {
 
     @Test
     public void testErrPrint() {
-        Main m = new Main(primaryPath, targetPath);
+        var m = new Main(primaryPath, targetPath);
         m.setErrPrint("test");
         m.getErrPrint();
 //        m.getErrPrint().forEach(s -> {
 //            System.out.println(">>MainTest>> "+s);
 //        });
         assertEquals(6, m.getErrPrint().size());
+    }
+
+    @Test
+    public void testUtf16ToUtf8() {
+        String s = Main.utf16ToUtf8("t\u0000e\u0000s\u0000t\u0000");
+        assertEquals("test", s);
     }
 }
  */
@@ -419,10 +431,6 @@ SubString key and name, to hashmap.
 >> files count: 4
 >> matched found: 2
 >> Error size: 5
-Completed. Check logmessages.txt
-Matched 'folder file':
-C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\duke.png
-C:\testdata\test1\CB718C312BA1B3622ECFDCBF727465F2\z01r002.png
 Completed. Check logmessages.txt
  */
 
