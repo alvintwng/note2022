@@ -358,7 +358,7 @@ public class Main {
 }
 
 /* MainTest.java
-// To create this; Projects/com.zero1.app > right-click `New` > `Test for Existing Class`
+// To create this; right-click on 'Main.java', and select `Tools` > `Create Tests`
 package com.zero1.app;
 
 import org.junit.jupiter.api.Test;
