@@ -201,15 +201,16 @@ public class Main {
 
     private boolean subStringPutToHash(String s) {
 
-        String filename, mkey, sub;
-        try {
-            sub = s.substring(0, s.lastIndexOf(DELIMITER));
-            mkey = sub.substring(sub.lastIndexOf(DELIMITER) + 1); //eg. CB718C312BA1B3622ECFDCBF727465F2
-            filename = s.substring(s.lastIndexOf(DELIMITER) + 1);
-        } catch (StringIndexOutOfBoundsException e) {
-            errPrint.add("> StringException: " + s);
+        String filename, mkey;
+
+        String[] fields = s.split(DELIMITER + DELIMITER); // eg fields.length: 4
+        if (fields.length < 3) {
+            errPrint.add("> splited sentences less than 3.");
             return false;
         }
+        mkey = fields[fields.length - 2].trim().toLowerCase();
+        // eg. CB718C312BA1B3622ECFDCBF727465F2
+        filename = fields[fields.length - 1].trim().toLowerCase();
 
         // check if right key lgth
         if (mkey.length() == 32) {
@@ -358,12 +359,11 @@ public class Main {
 }
 
 /* MainTest.java
-// To create this; right-click on 'Main.java', and select `Tools` > `Create Tests`
+// To create this; right-click on 'Main.java', and select Tools > Create Tests
 package com.zero1.app;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-
 
 public class MainTest {
 
