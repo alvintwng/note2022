@@ -19,7 +19,7 @@ public class App {
                 + ">> files count: " + m.getTargetFileChkCount());
 
         if (m.getMode() != 2) {
-            m.setErrPrint(">> matched found: " + m.getMatchedArr().size());
+            System.out.println(">> matched found: " + m.getMatchedArr().size());
         }
 
         System.out.println(">> Error size: " + m.getErrPrint().size());
