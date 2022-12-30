@@ -1,12 +1,15 @@
+/* www.Zero1.Sg 2022Dec
+https://github.com/alvinzero1/verify/tree/api */
 package com.zero1.chkfileid;
 
-/**
- *
- * @author AlvinNg
- */
+import java.util.ArrayList;
+import java.util.Map;
+
 public interface Paths {
 
-    public boolean addPrimarypathFilenameToHashmap(String primaryPath);
+    public boolean addPrimarypathFilenameToHashmap();
 
-    public boolean targetFilesVerifyByHash(String targetPath);
+    public boolean targetFilesVerifyByHash();
+
+    public void setHashmap(Map<String, ArrayList<String>> map);
 }

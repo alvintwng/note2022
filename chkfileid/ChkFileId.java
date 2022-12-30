@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -18,10 +19,10 @@ import java.util.Scanner;
  *
  * Folder for files should be 32 chars String.
  */
-public class ChkFileId {
+public class ChkFileId implements Paths {
 
     private static final String DELIMITER = "\\"; // Window system
-    private final HashMap<String, ArrayList<String>> hashmap;
+    private Map<String, ArrayList<String>> hashmap;
     private ArrayList<String> matchedArr, errPrint;
     private int primaryLineCount = 0, targetFileChkCount = 0, mode = 0, matchedNameCount = 0;
     private String primaryPath, targetPath, info = "";
@@ -47,7 +48,7 @@ public class ChkFileId {
      *
      * @param primaryPathName
      * @param targetPathName
-     * @param modeType see mode
+     * @param modeType        see mode
      * @see setMode()
      */
     public ChkFileId(String primaryPathName, String targetPathName, int modeType) {
@@ -62,11 +63,11 @@ public class ChkFileId {
     }
 
     /**
-     * <li> default, mode = 0: foldername as hashmap key, to compare foldername
+     * <li>default, mode = 0: foldername as hashmap key, to compare foldername
      * together with filename to matchced.
-     * <li> mode = 1: filename as hashmap key, to compare foldername together
+     * <li>mode = 1: filename as hashmap key, to compare foldername together
      * with filename to matchced.
-     * <li> mode = 2: filename as hashmap key. However, only to compare
+     * <li>mode = 2: filename as hashmap key. However, only to compare
      * filename.
      *
      * @return mode
@@ -79,16 +80,16 @@ public class ChkFileId {
         return hashmap.size();
     }
 
+    public void setHashmap(Map<String, ArrayList<String>> map) {
+        this.hashmap = map;
+    }
+
     /**
      * @return list of matching folder together with file of primaryPath and
-     * targetPath.
+     *         targetPath.
      */
     public List<String> getMatchedArr() {
         return matchedArr;
-    }
-
-    public List<String> getErrPrint() {
-        return errPrint;
     }
 
     public int getPrimaryLineCount() {
@@ -116,6 +117,10 @@ public class ChkFileId {
         this.targetPath = targetPath;
     }
 
+    public List<String> getErrPrint() {
+        return errPrint;
+    }
+
     public void setErrPrint(String s) {
         errPrint.add(s);
     }
@@ -127,7 +132,7 @@ public class ChkFileId {
      *
      * @return
      */
-    public final boolean addPrimarypathFilenameToHashmap() {
+    public boolean addPrimarypathFilenameToHashmap() {
         info += "\n> primaryPath: " + primaryPath;
         String textLine;
         Scanner fileIn;
@@ -182,7 +187,7 @@ public class ChkFileId {
         // uses surrogate pairs, however
         // if there are any unpaired surrogate, will be assume utf8 in String.
         if (s.contains("\u0000")) { // check for extra null in utf8
-            s += "\u0000"; // add null at the last char 
+            s += "\u0000"; // add null at the last char
 
             // to replaces malformed-input and unmappable-character sequences.
             byte[] arr = s.getBytes(StandardCharsets.UTF_8);
@@ -205,7 +210,7 @@ public class ChkFileId {
      */
     private boolean subStringPutToHash(String s) {
         String filename, mkey;
-        int mkeyLength = 32; // folder name length 
+        int mkeyLength = 32; // folder name length
 
         String[] fields = s.split(DELIMITER + DELIMITER); // eg fields.length: 4
         if (fields.length < 3) {
@@ -224,12 +229,12 @@ public class ChkFileId {
 
         switch (mode) {
             case 2 -> {
-                //  filename as hashkey, full String as hashvalue
+                // filename as hashkey, full String as hashvalue
                 hashmap.computeIfAbsent(filename,
                         k -> new ArrayList<>()).add(s);
             }
             case 1 -> {
-                //  filename as hashkey, folder as hashvalue
+                // filename as hashkey, folder as hashvalue
                 hashmap.computeIfAbsent(filename,
                         k -> new ArrayList<>()).add(mkey);
             }
@@ -238,10 +243,10 @@ public class ChkFileId {
                 hashmap.computeIfAbsent(mkey,
                         k -> new ArrayList<>()).add(filename);
 
-//                if (!hashmap.containsKey(mkey)) {
-//                    hashmap.put(mkey, new ArrayList<>());
-//                }
-//                hashmap.get(mkey).add(filename);
+                // if (!hashmap.containsKey(mkey)) {
+                // hashmap.put(mkey, new ArrayList<>());
+                // }
+                // hashmap.get(mkey).add(filename);
             }
         }
         return true;
@@ -256,7 +261,7 @@ public class ChkFileId {
      *
      * @return True for process done, or false for wrong directory
      */
-    public final boolean targetFilesVerifyByHash() {
+    public boolean targetFilesVerifyByHash() {
         info += "\n>> targetPath: " + targetPath;
 
         var mainfile = new File(targetPath);
@@ -297,7 +302,7 @@ public class ChkFileId {
                 addIfMatched(tagFilename, tagKey, filepath);
             } else if (mode == 2 && hashmap.containsKey(tagFilename)) {
                 matchedNameCount++; // all filename sizes that matched
-                //add only if filename is mode2MinimumFileLength or more
+                // add only if filename is mode2MinimumFileLength or more
                 if (tagFilename.length() >= mode2MinimumFileLength) {
                     matchedArr.add(filepath + " <> " + hashmap.get(tagFilename));
                 }
