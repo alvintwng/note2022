@@ -16,6 +16,7 @@ public class ChkFileIdTest {
         assertEquals(9, m.getPrimaryLineCount());
         assertEquals(3, m.getTargetFileChkCount());
 
+        // add additional paths
         m.setPrimaryPath(primaryPath);
         m.setTargetPath(targetPath);
         assertTrue(m.addPrimarypathFilenameToHashmap());
@@ -31,6 +32,7 @@ public class ChkFileIdTest {
         var m = new ChkFileId(primaryPath, targetPath, 1);
         assertEquals(1, m.getMode());
         assertEquals(7, m.getHashmapSize());
+        assertEquals(1, m.getMatchedArr().size());
     }
 
     @Test
@@ -38,25 +40,29 @@ public class ChkFileIdTest {
         var m = new ChkFileId(primaryPath, targetPath, 2);
         assertEquals(2, m.getMode());
         assertEquals(7, m.getHashmapSize());
-        assertEquals(0, m.getMatchedFilesOnly().size());
+        assertEquals(1, m.getMatchedArr().size());
         assertEquals(1, m.getMatchedNameCount());
+    }
+
+    @Test
+    public void testUtf8ToUtf16() {
+
+        String s = ChkFileId.utf8ToUtf16("t\u0000e\u0000s\u0000t");
+        assertEquals("test", s);
+
+        s = ChkFileId.utf8ToUtf16("teS@t_ $'!c:\\a-bc_cd.png");
+        assertEquals("teSt_ c:\\a-bc_cd.png", s);
     }
 
     @Test
     public void testErrPrint() {
         var m = new ChkFileId(primaryPath, targetPath);
-        m.setErrPrint("test");
-        m.getErrPrint();
-//        m.getErrPrint().forEach(s -> {
-//            System.out.println(">>MainTest>> "+s);
-//        });
+        m.setErrPrint("testErrPrint at mode " + m.getMode());
         assertEquals(6, m.getErrPrint().size());
-    }
 
-    @Test
-    public void testUtf8ToUtf16() {
-        String s = ChkFileId.utf8ToUtf16("t\u0000e\u0000s\u0000t");
-        assertEquals("test", s);
+//        System.out.println(m.getInfo());
+//        m.getErrPrint().forEach(s -> {
+//            System.out.println(">> " + s);
+//        });
     }
-
 }
