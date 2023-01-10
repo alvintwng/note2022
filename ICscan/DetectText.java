@@ -17,13 +17,23 @@ import java.util.List;
  */
 public class DetectText {
 
+    /**
+     * ref: https://cloud.google.com/vision/docs/libraries#use
+     *
+     * @param filePath
+     * @param out
+     */
     public static void detectText(String filePath, PrintStream out) {
- 
+        // Initialize client that will be used to send requests. This client only needs to be created
+        // once, and can be reused for multiple requests. After completing all of your requests, call
+        // the "close" method on the client to safely clean up any remaining background resources.
         try {
-            List<AnnotateImageRequest> requests = new ArrayList<>();
 
+            // Reads the image file into memory
             var imgBytes = ByteString.readFrom(new FileInputStream(filePath));
 
+            // Builds the image annotation request
+            List<AnnotateImageRequest> requests = new ArrayList<>();
             var img = Image.newBuilder().setContent(imgBytes).build();
             var feat = Feature
                     .newBuilder()
@@ -36,6 +46,7 @@ public class DetectText {
                     .setImage(img).build();
             requests.add(request);
 
+            // Performs label detection on the image file
             var client = ImageAnnotatorClient.create();
             var response = client.batchAnnotateImages(requests);
             var responses = response.getResponsesList();
@@ -51,7 +62,6 @@ public class DetectText {
                     out.printf("Position : %s%n", annotation.getBoundingPoly());
                 }
             }
-
         } catch (IOException ex) {
             System.out.println(">>>>  IOException: " + ex);
         }
